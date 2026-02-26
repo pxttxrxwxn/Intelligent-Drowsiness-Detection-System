@@ -1,36 +1,31 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+# Intelligent Drowsiness Detection System
+ระบบตรวจจับความง่วงอัจฉริยะ (Intelligent Drowsiness Detection System) ผ่านกล้องเว็บแคมแบบ Real-time พัฒนาด้วย **Next.js**, **OpenCV.js** และ **ONNX Runtime Web** ระบบจะทำการประมวลผลบนเบราว์เซอร์ (Client-side) ทั้งหมด โดยเริ่มจากการตรวจจับใบหน้า ค้นหาดวงตา และใช้โมเดล Deep Learning (YOLO/ONNX) เพื่อวิเคราะห์สถานะของดวงตาว่า "ลืมตา (Awake)" หรือ "หลับตา/ง่วงนอน (Sleepy)" พร้อมระบบแจ้งเตือนด้วยเสียงอัตโนมัติ
+##  Features (คุณสมบัติหลัก)
+* **Real-time Detection:** ตรวจจับใบหน้าและดวงตาแบบเรียลไทม์ผ่านกล้องเว็บแคม
+* **In-Browser Inference:** รันโมเดล AI บนเบราว์เซอร์โดยตรงผ่าน ONNX Runtime Web (WASM) ไม่ต้องส่งข้อมูลภาพขึ้นเซิร์ฟเวอร์ (Privacy-first)
+* **Audio Alerts:** มีระบบเล่นเสียงแจ้งเตือนแบบสุ่ม (Sleepy sounds) เมื่อตรวจพบสถานะง่วงนอนติดต่อกัน และหยุดเสียงอัตโนมัติเมื่อกลับมาตื่นตัว
+* **High Performance:** ใช้ Haar Cascades ของ OpenCV ในการตีกรอบใบหน้าก่อน เพื่อจำกัดบริเวณการค้นหาดวงตา (ROI) ทำให้ประมวลผลได้รวดเร็วขึ้น
+* **Modern UI:** ออกแบบหน้าจอด้วย Tailwind CSS รองรับการแสดงผลเปอร์เซ็นต์ความแม่นยำ (Confidence) และสถานะของระบบแบบเรียลไทม์
+## Tech Stack (เทคโนโลยีที่ใช้)
+* **Framework:** Next.js (React)
+* **Computer Vision:
+* ** OpenCV.js (`haarcascade`)
+* **Machine Learning:** ONNX Runtime Web (`onnxruntime-web`)
+* **Styling:** Tailwind CSS
 
-First, run the development server:
+## Team Diao koy tang
+| **Student ID** | **Name**               |
+|-----------------|------------------------|
+| 67023008        | Apinya Sanghong        |
+| 67025077        | Supharoke Roopkhamdee     |
+| 67026427        | Pattarawin Rungpanarat |
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Demo
+[Demo Intelligent Drowsiness Detection System](https://intelligent-drowsiness-detection-system.vercel.app/)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Contact
+**หากมีคำถาม สามารถติดต่อผู้ดูแลโปรเจค:**
+  -  อีเมล: naysasatadur5555@gmail.com
+  -  GitHub: [https://github.com/pxttxrxwxn](https://github.com/pxttxrxwxn)
