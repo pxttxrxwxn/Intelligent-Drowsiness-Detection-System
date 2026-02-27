@@ -263,56 +263,72 @@ export default function Home() {
         eyeCascade.detectMultiScale(roiGray, eyes, 1.1, 3, 0, eyeMinSize);
 
         if (eyes.size() > 0) {
-          const e = eyes.get(0);
-          const absX = roiX + e.x;
-          const absY = roiY + e.y;
+          let isSleepy = false;
+          let finalDisplayLabel = "-";
+          let finalPredConf = 0;
 
-          const eyeCanvas = document.createElement("canvas");
-          eyeCanvas.width = e.width;
-          eyeCanvas.height = e.height;
-          const ectx = eyeCanvas.getContext("2d")!;
-          ectx.drawImage(canvas, absX, absY, e.width, e.height, 0, 0, e.width, e.height);
+          const maxEyesToProcess = Math.min(eyes.size(), 2);
+          for (let i = 0; i < maxEyesToProcess; i++) {
+            const e = eyes.get(i);
+            const absX = roiX + e.x;
+            const absY = roiY + e.y;
 
-          const input = preprocessToTensor(eyeCanvas);
-          const feeds: Record<string, ort.Tensor> = {};
-          feeds[session.inputNames[0]] = input;
+            const eyeCanvas = document.createElement("canvas");
+            eyeCanvas.width = e.width;
+            eyeCanvas.height = e.height;
+            const ectx = eyeCanvas.getContext("2d")!;
+            ectx.drawImage(canvas, absX, absY, e.width, e.height, 0, 0, e.width, e.height);
 
-          const results = await session.run(feeds);
-          const logits = results[session.outputNames[0]].data as Float32Array;
-          const probs = softmax(logits);
+            const input = preprocessToTensor(eyeCanvas);
+            const feeds: Record<string, ort.Tensor> = {};
+            feeds[session.inputNames[0]] = input;
 
-          let maxIdx = 0;
-          for (let i = 1; i < probs.length; i++) {
-            if (probs[i] > probs[maxIdx]) maxIdx = i;
+            const results = await session.run(feeds);
+            const logits = results[session.outputNames[0]].data as Float32Array;
+            const probs = softmax(logits);
+
+            let maxIdx = 0;
+            for (let p = 1; p < probs.length; p++) {
+              if (probs[p] > probs[maxIdx]) maxIdx = p;
+            }
+
+            const rawLabel = classes[maxIdx] ?? `Class ${maxIdx}`;
+            const displayLabel = capitalizeFirstLetter(rawLabel);
+            const predConf = probs[maxIdx];
+
+            // เช็คว่าถ้าเจอตาที่หลับ ให้เปลี่ยน State หลักเป็นหลับทันที
+            if (rawLabel.toLowerCase().includes("sleepy")) {
+              isSleepy = true;
+              finalDisplayLabel = displayLabel;
+              finalPredConf = predConf;
+            } else if (!isSleepy) {
+              finalDisplayLabel = displayLabel;
+              finalPredConf = predConf;
+            }
+
+            ctx.strokeStyle = "#00ffff";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(absX, absY, e.width, e.height);
+
+            ctx.fillStyle = "rgba(0,0,0,0.7)";
+            ctx.fillRect(absX, absY - 25, 140, 25);
+            ctx.fillStyle = "#00ff00";
+            ctx.font = "bold 16px sans-serif";
+            ctx.fillText(
+              `${displayLabel} ${(predConf * 100).toFixed(0)}%`,
+              absX + 5,
+              absY - 7
+            );
           }
 
-          const rawLabel = classes[maxIdx] ?? `Class ${maxIdx}`;
+          setEyeState(finalDisplayLabel);
+          setConf(finalPredConf);
 
-          const displayLabel = capitalizeFirstLetter(rawLabel);
-          const predConf = probs[maxIdx];
-
-          setEyeState(displayLabel);
-          setConf(predConf);
-
-          if (rawLabel.toLowerCase().includes("sleepy")) {
-              playRandomSleepySound();
-          } else if (rawLabel.toLowerCase().includes("awake")) {
-              handleAwakeState();
+          if (isSleepy) {
+            playRandomSleepySound();
+          } else {
+            handleAwakeState();
           }
-
-          ctx.strokeStyle = "#00ffff";
-          ctx.lineWidth = 2;
-          ctx.strokeRect(absX, absY, e.width, e.height);
-
-          ctx.fillStyle = "rgba(0,0,0,0.7)";
-          ctx.fillRect(absX, absY - 25, 140, 25);
-          ctx.fillStyle = "#00ff00";
-          ctx.font = "bold 16px sans-serif";
-          ctx.fillText(
-            `${displayLabel} ${(predConf * 100).toFixed(0)}%`,
-            absX + 5,
-            absY - 7
-          );
         }
 
         roiGray.delete();
