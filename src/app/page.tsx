@@ -349,35 +349,48 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen p-6 space-y-2 bg-[#FFF8E1] flex flex-col items-center">
-      <Image src="/image/logo.png" alt="Logo" width={140} height={140} className="absolute top-5 left-5"/>
-      <h1 className="text-4xl font-extrabold text-[#BF360C] font-[Montserrat] p-10">Intelligent Drowsiness Detection System</h1>
+    <main className="min-h-screen p-4 md:p-6 space-y-4 md:space-y-2 bg-[#FFF8E1] flex flex-col items-center relative">
+      <Image
+        src="/image/logo.png"
+        alt="Logo"
+        width={140}
+        height={140}
+        className="absolute top-4 left-4 w-16 md:w-35 h-auto md:top-5 md:left-5"
+      />
 
-      <div className="flex items-end space-x-88">
+      <h1 className="text-2xl md:text-4xl font-extrabold text-[#BF360C] font-[Montserrat] p-4 pt-16 md:p-10 text-center">
+        Intelligent Drowsiness Detection System
+      </h1>
+
+      <div className="flex flex-col md:flex-row items-center md:items-end w-full max-w-3xl justify-between space-y-3 md:space-y-0">
         <div className="flex space-x-2 font-[Montserrat]">
-          <div className="text-sm bg-[#5D4037] text-white py-3 rounded-2xl px-3 w-35">
+          <div className="text-xs md:text-sm bg-[#5D4037] text-white py-2 md:py-3 rounded-2xl px-3 w-35 text-center">
             Result: <b className={eyeState.toLowerCase().includes('open') || eyeState.toLowerCase().includes('awake') ? "text-green-600" : "text-[#F82A2A]"}>{eyeState}</b>
             {" "}
           </div>
-          <div className="text-sm bg-[#5D4037] text-white p-3 rounded-2xl">
+          <div className="text-xs md:text-sm bg-[#5D4037] text-white p-2 md:p-3 rounded-2xl">
             Conf: <b>{(conf * 100).toFixed(1)}%</b>
           </div>
         </div>
-        <div className="text-sm text-black font-[Prompt]">สถานะ: {status}</div>
+        <div className="text-sm md:text-base text-black font-[Prompt]">
+          สถานะ: {status}
+        </div>
       </div>
 
       <div className="relative w-full max-w-3xl">
         <video ref={videoRef} className="hidden" playsInline muted />
         <canvas
           ref={canvasRef}
-          className="w-full rounded-3xl border bg-white"
+          className="w-full rounded-2xl md:rounded-3xl border bg-white shadow-sm"
         />
       </div>
-      <p className="text-sm text-[#F82A2A] font-[Prompt]">
+
+      <p className="text-xs md:text-sm text-[#F82A2A] font-[Prompt] text-center px-2">
         หมายเหตุ: ระบบจะค้นหาใบหน้าก่อน แล้วจึงค้นหาดวงตาเฉพาะในส่วนบนของใบหน้า
       </p>
+      
       <button
-        className="px-6 py-3 rounded-4xl bg-[#DF5E10] text-white font-[Mochiy_Pop_P_One]"
+        className="px-6 py-3 rounded-full md:rounded-4xl bg-[#DF5E10] text-white font-[Mochiy_Pop_P_One] text-sm md:text-base transition-transform active:scale-95"
         onClick={startCamera}
       >
         Start Camera
