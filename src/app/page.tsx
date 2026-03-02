@@ -229,6 +229,7 @@ export default function Home() {
       const src = cv.imread(canvas);
       const gray = new cv.Mat();
       cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+      
       const faces = new cv.RectVector();
       const faceMinSize = new cv.Size(100, 100);
       faceCascade.detectMultiScale(gray, faces, 1.1, 3, 0, faceMinSize);
@@ -258,18 +259,43 @@ export default function Home() {
         const roiRect = new cv.Rect(roiX, roiY, roiW, roiH);
         const roiGray = gray.roi(roiRect);
 
+        const enhancedRoi = new cv.Mat();
+        cv.equalizeHist(roiGray, enhancedRoi);
+
         const eyes = new cv.RectVector();
         const eyeMinSize = new cv.Size(20, 20);
-        eyeCascade.detectMultiScale(roiGray, eyes, 1.1, 3, 0, eyeMinSize);
+        eyeCascade.detectMultiScale(enhancedRoi, eyes, 1.1, 3, 0, eyeMinSize);
+        const eyeRects = [];
 
         if (eyes.size() > 0) {
+
+          for (let i = 0; i < eyes.size(); i++) {
+            eyeRects.push(eyes.get(i));
+          }
+        } else {
+          const eyeW = Math.floor(roiW * 0.35);
+          const eyeH = Math.floor(roiH * 0.50);
+          
+          const leftEyeX = Math.floor(roiW * 0.10);
+          const rightEyeX = Math.floor(roiW * 0.55);
+          const eyeY = Math.floor(roiH * 0.20);
+
+          eyeRects.push(new cv.Rect(leftEyeX, eyeY, eyeW, eyeH));
+          eyeRects.push(new cv.Rect(rightEyeX, eyeY, eyeW, eyeH));
+
+          ctx.strokeStyle = "rgba(255, 165, 0, 0.5)";
+          ctx.strokeRect(roiX + leftEyeX, roiY + eyeY, eyeW, eyeH);
+          ctx.strokeRect(roiX + rightEyeX, roiY + eyeY, eyeW, eyeH);
+        }
+
+        if (eyeRects.length > 0) {
           let isSleepy = false;
           let finalDisplayLabel = "-";
           let finalPredConf = 0;
 
-          const maxEyesToProcess = Math.min(eyes.size(), 2);
+          const maxEyesToProcess = Math.min(eyeRects.length, 2);
           for (let i = 0; i < maxEyesToProcess; i++) {
-            const e = eyes.get(i);
+            const e = eyeRects[i];
             const absX = roiX + e.x;
             const absY = roiY + e.y;
 
@@ -296,8 +322,7 @@ export default function Home() {
             const displayLabel = capitalizeFirstLetter(rawLabel);
             const predConf = probs[maxIdx];
 
-            // เช็คว่าถ้าเจอตาที่หลับ ให้เปลี่ยน State หลักเป็นหลับทันที
-            if (rawLabel.toLowerCase().includes("sleepy")) {
+            if (rawLabel.toLowerCase().includes("sleepy") || rawLabel.toLowerCase().includes("closed")) {
               isSleepy = true;
               finalDisplayLabel = displayLabel;
               finalPredConf = predConf;
@@ -306,9 +331,11 @@ export default function Home() {
               finalPredConf = predConf;
             }
 
-            ctx.strokeStyle = "#00ffff";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(absX, absY, e.width, e.height);
+            if (eyes.size() > 0) {
+                ctx.strokeStyle = "#00ffff";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(absX, absY, e.width, e.height);
+            }
 
             ctx.fillStyle = "rgba(0,0,0,0.7)";
             ctx.fillRect(absX, absY - 25, 140, 25);
@@ -331,6 +358,7 @@ export default function Home() {
           }
         }
 
+        enhancedRoi.delete();
         roiGray.delete();
         eyes.delete();
       }
