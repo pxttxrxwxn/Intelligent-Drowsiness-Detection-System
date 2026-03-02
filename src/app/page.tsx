@@ -8,7 +8,6 @@ import Image from "next/image";
 type CvType = any;
 
 export default function Home() {
-
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -16,16 +15,15 @@ export default function Home() {
   const [eyeState, setEyeState] = useState<string>("-");
   const [conf, setConf] = useState<number>(0);
 
-
   const cvRef = useRef<CvType | null>(null);
   const faceCascadeRef = useRef<any>(null);
   const eyeCascadeRef = useRef<any>(null);
   const sessionRef = useRef<ort.InferenceSession | null>(null);
   const classesRef = useRef<string[] | null>(null);
-
-  const lastAudioPlayTimeRef = useRef<number>(0);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-  const stopAudioTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sleepyStartTimeRef = useRef<number | null>(null);
+  const awakeStartTimeRef = useRef<number | null>(null);
+  const isAlarmPlayingRef = useRef<boolean>(false);
 
   async function loadOpenCV() {
     if (typeof window === "undefined") return;
@@ -162,45 +160,34 @@ export default function Home() {
     return exps.map((v) => v / sum);
   }
 
-  function playRandomSleepySound() {
-    if (stopAudioTimerRef.current) {
-      clearTimeout(stopAudioTimerRef.current);
-      stopAudioTimerRef.current = null;
+  function startAlarm() {
+    if (isAlarmPlayingRef.current) return;
+    isAlarmPlayingRef.current = true;
+
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.currentTime = 0;
     }
 
-    const now = Date.now();
+    const randomNum = Math.floor(Math.random() * 3) + 1;
+    const audio = new Audio(`/voice/sleepy${randomNum}.mp3`);
+    audio.loop = true;
+    currentAudioRef.current = audio;
 
-    if (now - lastAudioPlayTimeRef.current > 3000) {
-      if (currentAudioRef.current) {
-        currentAudioRef.current.pause();
-        currentAudioRef.current.currentTime = 0;
-      }
-
-      const randomNum = Math.floor(Math.random() * 3) + 1;
-      const audio = new Audio(`/voice/sleepy${randomNum}.mp3`);
-      
-      currentAudioRef.current = audio;
-      
-      audio.play().catch(err => console.error("Error playing sound:", err));
-      lastAudioPlayTimeRef.current = now;
-    }
+    audio.play().catch(err => console.error("Error playing sound:", err));
   }
 
-  function handleAwakeState() {
-    if (currentAudioRef.current && !currentAudioRef.current.paused && !stopAudioTimerRef.current) {
-        stopAudioTimerRef.current = setTimeout(() => {
-          if (currentAudioRef.current) {
-            currentAudioRef.current.pause();
-            currentAudioRef.current.currentTime = 0;
-          }
-          stopAudioTimerRef.current = null;
-        }, 3000);
+  function stopAlarm() {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.currentTime = 0;
     }
+    isAlarmPlayingRef.current = false;
   }
 
   function capitalizeFirstLetter(string: string) {
-      if (!string) return string;
-      return string.charAt(0).toUpperCase() + string.slice(1);
+    if (!string) return string;
+    return string.charAt(0).toUpperCase() + string.slice(1);
   }
 
   async function loop() {
@@ -229,7 +216,7 @@ export default function Home() {
       const src = cv.imread(canvas);
       const gray = new cv.Mat();
       cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-      
+
       const faces = new cv.RectVector();
       const faceMinSize = new cv.Size(100, 100);
       faceCascade.detectMultiScale(gray, faces, 1.1, 3, 0, faceMinSize);
@@ -268,14 +255,13 @@ export default function Home() {
         const eyeRects = [];
 
         if (eyes.size() > 0) {
-
           for (let i = 0; i < eyes.size(); i++) {
             eyeRects.push(eyes.get(i));
           }
         } else {
           const eyeW = Math.floor(roiW * 0.35);
           const eyeH = Math.floor(roiH * 0.50);
-          
+
           const leftEyeX = Math.floor(roiW * 0.10);
           const rightEyeX = Math.floor(roiW * 0.55);
           const eyeY = Math.floor(roiH * 0.20);
@@ -321,7 +307,6 @@ export default function Home() {
             const rawLabel = classes[maxIdx] ?? `Class ${maxIdx}`;
             const displayLabel = capitalizeFirstLetter(rawLabel);
             const predConf = probs[maxIdx];
-
             if (rawLabel.toLowerCase().includes("sleepy") || rawLabel.toLowerCase().includes("closed")) {
               isSleepy = true;
               finalDisplayLabel = displayLabel;
@@ -332,9 +317,9 @@ export default function Home() {
             }
 
             if (eyes.size() > 0) {
-                ctx.strokeStyle = "#00ffff";
-                ctx.lineWidth = 2;
-                ctx.strokeRect(absX, absY, e.width, e.height);
+              ctx.strokeStyle = "#00ffff";
+              ctx.lineWidth = 2;
+              ctx.strokeRect(absX, absY, e.width, e.height);
             }
 
             ctx.fillStyle = "rgba(0,0,0,0.7)";
@@ -351,10 +336,27 @@ export default function Home() {
           setEyeState(finalDisplayLabel);
           setConf(finalPredConf);
 
+          // eslint-disable-next-line react-hooks/purity
+          const now = Date.now();
+
           if (isSleepy) {
-            playRandomSleepySound();
+            awakeStartTimeRef.current = null;
+
+            if (sleepyStartTimeRef.current === null) {
+              sleepyStartTimeRef.current = now;
+            } else if (now - sleepyStartTimeRef.current >= 3000) {
+              startAlarm();
+            }
           } else {
-            handleAwakeState();
+            sleepyStartTimeRef.current = null;
+
+            if (isAlarmPlayingRef.current) {
+              if (awakeStartTimeRef.current === null) {
+                awakeStartTimeRef.current = now;
+              } else if (now - awakeStartTimeRef.current >= 3000) {
+                stopAlarm();
+              }
+            }
           }
         }
 
@@ -432,7 +434,7 @@ export default function Home() {
       <p className="text-xs md:text-sm text-[#F82A2A] font-[Prompt] text-center px-2">
         หมายเหตุ: ระบบจะค้นหาใบหน้าก่อน แล้วจึงค้นหาดวงตาเฉพาะในส่วนบนของใบหน้า
       </p>
-      
+
       <button
         className="px-6 py-3 rounded-full md:rounded-4xl bg-[#DF5E10] text-white font-[Mochiy_Pop_P_One] text-sm md:text-base transition-transform active:scale-95"
         onClick={startCamera}
