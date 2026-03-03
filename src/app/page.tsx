@@ -344,7 +344,7 @@ export default function Home() {
 
             if (sleepyStartTimeRef.current === null) {
               sleepyStartTimeRef.current = now;
-            } else if (now - sleepyStartTimeRef.current >= 3000) {
+            } else if (now - sleepyStartTimeRef.current >= 1500) {
               startAlarm();
             }
           } else {
@@ -353,7 +353,7 @@ export default function Home() {
             if (isAlarmPlayingRef.current) {
               if (awakeStartTimeRef.current === null) {
                 awakeStartTimeRef.current = now;
-              } else if (now - awakeStartTimeRef.current >= 3000) {
+              } else if (now - awakeStartTimeRef.current >= 1500) {
                 stopAlarm();
               }
             }
